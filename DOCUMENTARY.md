@@ -50,7 +50,7 @@ The framework is divided into three core phases:
 .\Veilux.exe
 
 # Manual Protocol
-python hide_no_more.py
+python Veilux.py
 ```
 
 ## Ethical Directive

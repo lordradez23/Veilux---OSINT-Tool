@@ -45,7 +45,7 @@ Veilux offers two primary ways to operate:
 ### 1. Terminal Framework (CLI)
 Experience the full cinematic "Digital Blood" interface with matrix rain and aggressive boot sequences.
 ```powershell
-python hide_no_more.py
+python Veilux.py
 ```
 
 ### 2. Modern GUI (Graphical Interface)
