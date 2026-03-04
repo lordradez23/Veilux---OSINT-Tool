@@ -1,0 +1,10 @@
+requests
+phonenumbers
+python-whois
+colorama
+Pillow
+folium
+fpdf2
+dnspython
+mac-vendor-lookup
+pyinstaller
