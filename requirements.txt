@@ -1,0 +1,14 @@
+# VEILUX-NG Requirements
+# Install with: pip install -r requirements.txt
+
+requests>=2.31.0
+phonenumbers>=8.13.0
+python-whois>=0.9.4
+dnspython>=2.6.0
+Pillow>=10.3.0
+python-dotenv>=1.0.0
+colorama>=0.4.6
+
+# Testing
+pytest>=8.2.0
+pytest-mock>=3.14.0
