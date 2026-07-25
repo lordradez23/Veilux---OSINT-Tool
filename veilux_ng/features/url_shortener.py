@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
 from veilux_ng.utils.helpers import anonymize_ip, parse_user_agent
 from veilux_ng.utils.validators import validate_url
@@ -84,7 +85,7 @@ class URLShortener:
     def shorten(self, long_url: str, campaign: Optional[str] = None) -> ShortenResult:
         """Shorten a URL and return the result."""
         if not validate_url(long_url):
-            raise ValueError(f"Invalid URL: {long_url}")
+            raise ValidationError(f"Invalid URL: {long_url}")
 
         short_code = self._generate_code(long_url)
         created_at = datetime.now(timezone.utc).isoformat()

@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
 from veilux_ng.utils.helpers import safe_request
 from veilux_ng.utils.validators import validate_username
@@ -67,7 +68,7 @@ class SocialDiscovery:
 
     def discover(self, username: str) -> SocialDiscoveryReport:
         if not validate_username(username):
-            raise ValueError(f"Invalid username: '{username}'. Use alphanumeric/underscore only.")
+            raise ValidationError(f"Invalid username: '{username}'. Use alphanumeric/underscore only.")
 
         report = SocialDiscoveryReport(username=username)
         logger.info("Starting social discovery for username: %s", username)
