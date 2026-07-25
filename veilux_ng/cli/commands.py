@@ -10,6 +10,7 @@ import sys
 import colorama
 colorama.init()
 
+from pathlib import Path
 from veilux_ng import VeiluxEngine, __version__
 from veilux_ng.cli.formatters import format_report, print_banner
 
@@ -41,29 +42,83 @@ _FEATURE_MAP = {
     "7": "image_analysis",
 }
 
+_PROMPTS = {
+    "phone_analysis":    "Enter Nigerian phone number (e.g. 08031234567): ",
+    "ip_intelligence":   "Enter IP address (e.g. 8.8.8.8): ",
+    "domain_analysis":   "Enter domain (e.g. example.com): ",
+    "phishing_detector": "Enter URL to check (e.g. https://...): ",
+    "social_discovery":  "Enter username (alphanumeric/underscore only): ",
+    "url_shortener":     "Enter URL to shorten (e.g. https://...): ",
+    "image_analysis":    "Enter image URL or local file path: ",
+}
+
 C = colorama.Fore
 S = colorama.Style
 
 
 def run_cli() -> None:
-    parser = argparse.ArgumentParser(
-        prog="veilux-ng",
-        description=f"VEILUX-NG v{__version__} — Nigerian OSINT Framework",
-    )
-    parser.add_argument("target", nargs="?", help="Target to investigate")
-    parser.add_argument("--feature", "-f", choices=_FEATURES, help="Force a specific feature")
-    parser.add_argument("--version", "-v", action="version", version=f"VEILUX-NG {__version__}")
-
+    # Initialize argument parser
+    parser = argparse.ArgumentParser(description="Veilux-NG CLI")
+    parser.add_argument("target", nargs="?", help="Target input (IP, domain, URL, etc.)")
+    parser.add_argument("-f", "--feature", choices=_FEATURES, help="Feature to run explicitly")
+    parser.add_argument("--output", "-o", help="File path to write the report (JSON or TXT).")
+    parser.add_argument("--format", choices=["json", "txt"], default="json",
+                        help="Output format when using --output (default json).")
+    parser.add_argument("--batch", "-b", help="Path to a text file with one target per line for batch processing.")
+    # If batch mode is used, ignore --target and --feature; they will be read per line.
     args = parser.parse_args()
+
     engine = VeiluxEngine()
 
-    # Non-interactive mode
-    if args.target:
-        report = engine.investigate(args.target, feature=args.feature)
-        print(format_report(report))
+    # ---------------------------------------------------------------
+    # Batch mode (non-interactive only)
+    # ---------------------------------------------------------------
+    if args.batch:
+        batch_path = Path(args.batch)
+        if not batch_path.is_file():
+            print(f"{C.RED}Batch file not found: {args.batch}{R}")
+            sys.exit(1)
+        with batch_path.open("r", encoding="utf-8") as fh:
+            lines = [l.strip() for l in fh.readlines() if l.strip() and not l.strip().startswith("#")]
+        summary = []
+        for line in lines:
+            report = engine.investigate(line)
+            print(format_report(report))
+            summary.append((line, report.detected_type, ", ".join(report.results.keys()), ", ".join(report.errors.keys())))
+            if args.output:
+                out_path = Path(args.output).with_name(f"{Path(line).stem}_report.{args.format}")
+                # Use reporter to write file
+                from veilux_ng.core.reporter import export_json, export_txt
+                formatted = format_report(report)
+                if args.format == "json":
+                    export_json(report, out_path)
+                else:
+                    export_txt(report, formatted, out_path)
+        # Print summary table
+        print(f"\n{C.CYAN}Batch Summary:{R}")
+        for tgt, typ, mods, errs in summary:
+            print(f"  {tgt:<30} {typ:<10} {mods:<30} {errs}")
         return
 
-    # Interactive menu
+    # ---------------------------------------------------------------
+    # Non-interactive single target mode
+    # ---------------------------------------------------------------
+    if args.target:
+        report = engine.investigate(args.target, feature=args.feature)
+        formatted = format_report(report)
+        print(formatted)
+        if args.output:
+            out_path = Path(args.output)
+            from veilux_ng.core.reporter import export_json, export_txt
+            if args.format == "json":
+                export_json(report, out_path)
+            else:
+                export_txt(report, formatted, out_path)
+        return
+
+    # ---------------------------------------------------------------
+    # Interactive menu (unchanged)
+    # ---------------------------------------------------------------
     print_banner()
     while True:
         Y, R, G = C.YELLOW, S.RESET_ALL, C.GREEN
@@ -90,7 +145,8 @@ def run_cli() -> None:
             continue
 
         try:
-            target = input(f"{G}Enter target: {R}").strip()
+            prompt = _PROMPTS.get(feature, "Enter target: ")
+            target = input(f"{G}{prompt}{R}").strip()
             if not target:
                 continue
             report = engine.investigate(target, feature=feature)
