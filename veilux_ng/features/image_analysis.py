@@ -5,6 +5,7 @@ Images are not stored — analysed in memory only.
 """
 
 import io
+import os
 import re
 from dataclasses import dataclass, field
 from typing import Optional
@@ -13,6 +14,7 @@ from urllib.parse import quote
 from PIL import Image, ExifTags
 from PIL.ExifTags import TAGS, GPSTAGS
 
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
 from veilux_ng.utils.helpers import safe_request
 from veilux_ng.utils.validators import validate_url
@@ -49,30 +51,42 @@ class ImageReport:
 
 class ImageAnalysis:
     """
-    Downloads a publicly accessible image and extracts EXIF metadata,
-    GPS coordinates, and generates reverse image search links.
+    Downloads a publicly accessible image (or reads a local file) and extracts
+    EXIF metadata, GPS coordinates, and generates reverse image search links.
     Image data is never persisted to disk.
     """
 
     def analyze(self, image_url: str) -> ImageReport:
-        if not validate_url(image_url):
-            raise ValueError(f"Invalid image URL: {image_url}")
+        is_local = os.path.isfile(image_url)
+
+        if not is_local and not validate_url(image_url):
+            raise ValidationError(f"Invalid image URL or file not found: {image_url}")
 
         report = ImageReport(source_url=image_url)
-        logger.info("Fetching image for analysis: %s", image_url[:80])
 
-        resp = safe_request(image_url, timeout=15)
-        if not resp or resp.status_code != 200:
-            report.notes = "Could not download image."
-            return report
+        if is_local:
+            logger.info("Reading local image file: %s", image_url)
+            try:
+                with open(image_url, "rb") as f:
+                    raw_bytes = f.read()
+            except OSError as exc:
+                report.notes = f"Could not read local file: {exc}"
+                return report
+            report.file_size_kb = round(len(raw_bytes) / 1024, 2)
+        else:
+            logger.info("Fetching image for analysis: %s", image_url[:80])
+            resp = safe_request(image_url, timeout=15)
+            if not resp or resp.status_code != 200:
+                report.notes = "Could not download image."
+                return report
 
-        content_type = resp.headers.get("Content-Type", "")
-        if "image" not in content_type:
-            report.notes = f"URL does not point to an image (Content-Type: {content_type})."
-            return report
+            content_type = resp.headers.get("Content-Type", "")
+            if "image" not in content_type:
+                report.notes = f"URL does not point to an image (Content-Type: {content_type})."
+                return report
 
-        raw_bytes = resp.content
-        report.file_size_kb = round(len(raw_bytes) / 1024, 2)
+            raw_bytes = resp.content
+            report.file_size_kb = round(len(raw_bytes) / 1024, 2)
 
         try:
             img = Image.open(io.BytesIO(raw_bytes))
@@ -85,7 +99,12 @@ class ImageAnalysis:
 
         self._extract_exif(img, report)
         self._detect_tampering(img, report)
-        report.reverse_search_links = self._reverse_search_links(image_url)
+
+        # Only generate reverse-search links for public URLs
+        if not is_local:
+            report.reverse_search_links = self._reverse_search_links(image_url)
+        else:
+            report.notes = "Local file — reverse image search links unavailable."
 
         logger.info(
             "Image analysis complete: %dx%d %s, GPS=%s",
