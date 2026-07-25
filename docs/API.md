@@ -1,4 +1,5 @@
 # VEILUX-NG API Reference
+> Complete developer reference for the Veilux-NG OSINT engine modules and dataclasses.
 
 ## VeiluxEngine
 
