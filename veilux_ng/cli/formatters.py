@@ -75,12 +75,23 @@ def _format_result(feature: str, result) -> list[str]:
     elif feature == "ip_intelligence":
         lines += [
             f"  IP          : {G}{result.ip}{R}",
-            f"  Location    : {G}{result.city}, {result.country}{R}",
+            f"  Hostname    : {G}{result.hostname or 'N/A'}{R}",
+            f"  Location    : {G}{result.city or 'N/A'}, {result.country or 'N/A'}{R}",
             f"  ISP         : {G}{result.isp or 'N/A'}{R}",
             f"  ASN         : {G}{result.asn or 'N/A'}{R}",
             f"  Proxy/VPN   : {G}{result.is_proxy}{R}",
-            f"  Risk score  : {G}{result.risk_score}/100{R}",
         ]
+        # Color‑code risk score
+        if result.risk_score >= 60:
+            risk_color = C.RED
+        elif result.risk_score >= 30:
+            risk_color = C.YELLOW
+        else:
+            risk_color = C.GREEN
+        lines.append(f"  Risk score  : {risk_color}{result.risk_score}/100{R}")
+        # Risk flags
+        for flag in getattr(result, "risk_flags", []):
+            lines.append(f"    {C.RED}⚑{R} {flag}")
         if result.maps_url:
             lines.append(f"  Maps        : {G}{result.maps_url}{R}")
 
@@ -129,20 +140,23 @@ def _format_result(feature: str, result) -> list[str]:
         ]
 
     elif feature == "image_analysis":
+        dims = f"{result.width}x{result.height}px" if result.width and result.height else "N/A"
         lines += [
             f"  Format      : {G}{result.format or 'N/A'}{R}",
-            f"  Dimensions  : {G}{result.width}x{result.height}px{R}",
-            f"  File size   : {G}{result.file_size_kb} KB{R}",
+            f"  Dimensions  : {G}{dims}{R}",
+            f"  File size   : {G}{result.file_size_kb or 'N/A'} KB{R}",
             f"  Camera      : {G}{result.camera_make or 'N/A'} {result.camera_model or ''}{R}",
+            f"  Software    : {G}{result.software or 'N/A'}{R}",
             f"  Date taken  : {G}{result.date_taken or 'N/A'}{R}",
         ]
         if result.gps:
             lines.append(f"  GPS         : {G}{result.gps.latitude:.5f}, {result.gps.longitude:.5f}{R}")
             lines.append(f"  Maps        : {G}{result.gps.maps_url}{R}")
         for name, link in result.reverse_search_links.items():
-            lines.append(f"  {name:<10}  : {G}{link}{R}")
-        for indicator in result.tampering_indicators:
-            lines.append(f"  {C.YELLOW}⚠ {indicator}{R}")
+            lines.append(f"    {C.RED}FLAG{R} {flag}")
+            lines.append(f"    {C.RED}FLAG{R} {flag}")
+            lines.append(f"  {C.YELLOW}WARNING {indicator}{R}")
+            lines.append(f"  {C.YELLOW}NOTE {result.notes}{R}")
 
     else:
         lines.append(f"  {str(result)}")
