@@ -14,8 +14,9 @@ from veilux_ng.utils.validators import validate_ip
 
 logger = get_logger("ip_intelligence")
 
-_IPINFO_URL   = "https://ipinfo.io/{}/json"
-_IPAPI_URL    = "https://ip-api.com/json/{}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting,query"
+_IPINFO_URL    = "https://ipinfo.io/{}/json"
+_IPAPI_URL     = "https://ip-api.com/json/{}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting,query"
+_IPWHOIS_URL   = "https://ipwhois.app/json/{}"              # Free fallback — no key required
 _ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"  # Requires free API key — gracefully skipped if absent
 
 

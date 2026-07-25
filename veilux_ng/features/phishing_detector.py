@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 import whois
 
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
 from veilux_ng.utils.helpers import safe_request, extract_domain, levenshtein
 from veilux_ng.utils.constants import KNOWN_BRANDS
@@ -68,7 +69,7 @@ class PhishingDetector:
 
     def analyze(self, url: str) -> PhishingReport:
         if not validate_url(url):
-            raise ValueError(f"Invalid URL: {url}")
+            raise ValidationError(f"Invalid URL: {url}")
 
         domain = extract_domain(url)
         flags: list[str] = []
