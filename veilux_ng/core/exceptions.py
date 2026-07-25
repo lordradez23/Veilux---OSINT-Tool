@@ -11,7 +11,7 @@ class ComplianceError(VeiluxError):
     """Raised when a feature fails an NDPA 2023 compliance check."""
 
 
-class ValidationError(VeiluxError):
+class ValidationError(VeiluxError, ValueError):
     """Raised when user input fails validation."""
 
 
