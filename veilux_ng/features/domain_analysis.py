@@ -13,6 +13,7 @@ from typing import Optional
 import dns.resolver
 import whois
 
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
 from veilux_ng.utils.helpers import safe_request
 from veilux_ng.utils.validators import validate_domain
@@ -59,7 +60,7 @@ class DomainAnalysis:
     def analyze(self, domain: str) -> DomainReport:
         domain = domain.strip().lower().lstrip("www.")
         if not validate_domain(domain):
-            raise ValueError(f"Invalid domain: {domain}")
+            raise ValidationError(f"Invalid domain: {domain}")
 
         report = DomainReport(domain=domain)
         logger.info("Starting domain analysis for: %s", domain)
