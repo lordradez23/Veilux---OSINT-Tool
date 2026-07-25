@@ -135,11 +135,7 @@ def _format_result(feature: str, result) -> list[str]:
         lines += [
             f"  Short URL   : {G}{result.short_url}{R}",
             f"  Short code  : {G}{result.short_code}{R}",
-"""
-VEILUX-NG CLI Formatters
-Converts report dataclasses into readable terminal output.
-"""
-
+        ]
 import colorama
 colorama.init()
 
