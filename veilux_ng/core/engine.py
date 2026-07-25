@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from veilux_ng.core.compliance import ComplianceEngine
 from veilux_ng.core.logger import get_logger
+from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.features.url_shortener import URLShortener
 from veilux_ng.features.phishing_detector import PhishingDetector
 from veilux_ng.features.social_discovery import SocialDiscovery
@@ -32,6 +33,27 @@ class InvestigationReport:
     results: dict[str, Any] = field(default_factory=dict)
     compliance: dict[str, Any] = field(default_factory=dict)
     errors: dict[str, str] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Serialise the report to a plain dict suitable for JSON export."""
+        import dataclasses
+
+        def _serialise(obj):
+            if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+                return {k: _serialise(v) for k, v in dataclasses.asdict(obj).items()}
+            if isinstance(obj, dict):
+                return {k: _serialise(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [_serialise(i) for i in obj]
+            return obj
+
+        return {
+            "identifier":    self.identifier,
+            "detected_type": self.detected_type,
+            "results":       {k: _serialise(v) for k, v in self.results.items()},
+            "compliance":    self.compliance,
+            "errors":        self.errors,
+        }
 
 
 class VeiluxEngine:
@@ -59,19 +81,20 @@ class VeiluxEngine:
     def investigate(self, identifier: str, feature: Optional[str] = None) -> InvestigationReport:
         """
         Run OSINT on an identifier.
-        If feature is specified, run only that module.
+        If feature is specified and is not "auto", run only that module.
         Otherwise auto-detect the identifier type and run all applicable modules.
         """
         identifier = identifier.strip()
-        detected = feature or self._detect_type(identifier)
-        report = InvestigationReport(identifier=identifier, detected_type=detected)
 
-        logger.info("Investigation started: identifier='%s' type='%s'", identifier[:60], detected)
-
-        if detected == "auto":
+        if feature is None or feature == "auto":
+            detected_type = self._detect_type(identifier)
+            report = InvestigationReport(identifier=identifier, detected_type=detected_type)
+            logger.info("Investigation started: identifier='%s' type='%s'", identifier[:60], detected_type)
             self._run_all(identifier, report)
         else:
-            self._run_single(identifier, detected, report)
+            report = InvestigationReport(identifier=identifier, detected_type=feature)
+            logger.info("Investigation started: identifier='%s' type='%s'", identifier[:60], feature)
+            self._run_single(identifier, feature, report)
 
         return report
 
@@ -98,6 +121,9 @@ class VeiluxEngine:
         try:
             result = self._dispatch(identifier, feature)
             report.results[feature] = result
+        except ValidationError as exc:
+            logger.warning("Feature '%s' validation failed for '%s': %s", feature, identifier[:60], exc)
+            report.errors[feature] = str(exc)
         except Exception as exc:
             logger.error("Feature '%s' failed for '%s': %s", feature, identifier[:60], exc)
             report.errors[feature] = str(exc)
@@ -149,11 +175,12 @@ class VeiluxEngine:
             return "ip"
         except ValueError:
             pass
+        # Local image file path (absolute or relative, any OS separator)
+        _IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
+        if any(identifier.lower().endswith(ext) for ext in _IMAGE_EXTS):
+            return "image"
         # URL
         if identifier.startswith(("http://", "https://")):
-            # Image URL
-            if any(identifier.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")):
-                return "image"
             return "url"
         # Domain
         if validate_domain(identifier):
