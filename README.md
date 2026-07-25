@@ -1,4 +1,11 @@
 # VEILUX-NG — Next Generation Nigerian OSINT Framework
+
+[![Build Matrix](https://img.shields.io/github/actions/workflow/status/lordradez23/Veilux---OSINT-Tool/tests.yml?branch=main&label=Build%20Matrix&style=flat-square)](https://github.com/lordradez23/Veilux---OSINT-Tool/actions)
+[![Python Matrix](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue?style=flat-square)](https://github.com/lordradez23/Veilux---OSINT-Tool)
+[![GitHub Stars](https://img.shields.io/github/stars/lordradez23/Veilux---OSINT-Tool?style=flat-square&logo=github)](https://github.com/lordradez23/Veilux---OSINT-Tool/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/lordradez23/Veilux---OSINT-Tool?style=flat-square&logo=github)](https://github.com/lordradez23/Veilux---OSINT-Tool/network/members)
+[![License](https://img.shields.io/github/license/lordradez23/Veilux---OSINT-Tool?style=flat-square)](LICENSE)
+
 **Version 2.0.0 | By Lordradeez.exe | NDPA 2023 Compliant**
 
 ```
