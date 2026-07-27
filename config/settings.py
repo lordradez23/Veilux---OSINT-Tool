@@ -29,6 +29,9 @@ class Settings:
     OPENPHISH_KEY: str         = os.getenv("OPENPHISH_KEY", "")
     SHODAN_API_KEY: str        = os.getenv("SHODAN_API_KEY", "")
     ABUSEIPDB_API_KEY: str     = os.getenv("ABUSEIPDB_API_KEY", "")
+    DOMSCAN_API_KEY: str       = os.getenv("DOMSCAN_API_KEY", "")
+    AHREFS_API_KEY: str        = os.getenv("AHREFS_API_KEY", "")
+    APININJAS_API_KEY: str     = os.getenv("APININJAS_API_KEY", "")
 
     # Logging
     LOG_LEVEL: str        = os.getenv("LOG_LEVEL", "INFO")
