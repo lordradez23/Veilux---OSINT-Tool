@@ -60,16 +60,16 @@ class IPIntelligence:
         if not validate_ip(ip):
             return IPReport(ip=ip, is_valid=False, notes="Invalid IP address format.")
 
-        # Check for private/reserved ranges
+        # Flag private/reserved ranges but still query APIs —
+        # geo-databases return labels like "Private Network" or "Reserved"
+        is_private = False
         try:
             addr = ipaddress.ip_address(ip)
-            if addr.is_private or addr.is_loopback or addr.is_reserved:
-                return IPReport(ip=ip, is_valid=True, is_private=True,
-                                notes="Private/reserved IP — no public geolocation available.")
+            is_private = addr.is_private or addr.is_loopback or addr.is_reserved
         except ValueError:
             pass
 
-        report = IPReport(ip=ip, is_valid=True)
+        report = IPReport(ip=ip, is_valid=True, is_private=is_private)
         logger.info("Starting IP intelligence for: %s", ip)
 
         self._query_ipapi(ip, report)

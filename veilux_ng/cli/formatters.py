@@ -78,19 +78,13 @@ def _format_result(feature: str, result) -> list[str]:
             lines.append(f"  Scam reports: {G}{result.scam_reports}{R}")
 
     elif feature == "ip_intelligence":
-        if result.is_private:
-            lines += [
-                f"  IP          : {G}{result.ip}{R}",
-                f"  Type        : {C.YELLOW}Private / Reserved{R}",
-                f"  Note        : {C.YELLOW}Private IPs have no public geolocation data.{R}",
-                f"  Tip         : {C.YELLOW}Enter a public IP (e.g. 8.8.8.8) for full intelligence.{R}",
-            ]
-        elif not result.is_valid:
+        if not result.is_valid:
             lines.append(f"  {C.RED}Invalid IP address.{R}")
         else:
+            private_tag = f" {C.YELLOW}[Private Range]{R}" if result.is_private else ""
             lines += [
-                f"  IP          : {G}{result.ip}{R}",
-                f"  Country     : {G}{result.country or 'N/A'} ({result.country_code or '??'}){R}",
+                f"  IP          : {G}{result.ip}{R}{private_tag}",
+                f"  Country     : {G}{result.country or 'Private Network'}{R}" + (f" ({result.country_code})" if result.country_code else ""),
                 f"  Region      : {G}{result.region or 'N/A'}{R}",
                 f"  City        : {G}{result.city or 'N/A'}{R}",
                 f"  Postal      : {G}{result.postal or 'N/A'}{R}",
