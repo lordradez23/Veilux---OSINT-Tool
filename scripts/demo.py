@@ -35,11 +35,22 @@ def run_demo() -> None:
     r = engine.investigate("8.8.8.8", feature="ip_intelligence")
     ip = r.results.get("ip_intelligence")
     if ip:
-        print(f"  IP        : {ip.ip}")
-        print(f"  Location  : {ip.city}, {ip.country}")
-        print(f"  ISP       : {ip.isp}")
-        print(f"  Proxy     : {ip.is_proxy}")
-        print(f"  Risk      : {ip.risk_score}/100")
+        print(f"  IP          : {ip.ip}")
+        print(f"  Location    : {ip.city}, {ip.country} ({ip.country_code})")
+        print(f"  ISP         : {ip.isp}")
+        print(f"  ASN         : {ip.asn}" + (f" ({ip.asn_name})" if ip.asn_name else ""))
+        print(f"  Carrier     : {ip.carrier or 'N/A'}")
+        print(f"  Company     : {ip.company_name or 'N/A'}" + (f" [{ip.company_type}]" if ip.company_type else ""))
+        print(f"  VPN         : {ip.is_vpn}")
+        print(f"  Proxy       : {ip.is_proxy}")
+        print(f"  Tor         : {ip.is_tor}")
+        print(f"  Relay       : {ip.is_relay}")
+        print(f"  Hosting     : {ip.is_hosting}")
+        print(f"  Threat lvl  : {ip.threat_level or 'N/A'}")
+        if ip.spur_tunnels:
+            print(f"  Spur tunnels: {', '.join(ip.spur_tunnels)}")
+        print(f"  Risk        : {ip.risk_score}/100")
+        print(f"  Sources     : {', '.join(ip.data_sources)}")
 
     # 3. Domain Analysis
     section("3. Domain Analysis")
