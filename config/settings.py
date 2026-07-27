@@ -21,10 +21,14 @@ class Settings:
     DATABASE_PATH: str    = os.getenv("DATABASE_PATH", "veilux_urls.db")
 
     # Optional API keys
-    IPINFO_TOKEN: str     = os.getenv("IPINFO_TOKEN", "")
-    OPENPHISH_KEY: str    = os.getenv("OPENPHISH_KEY", "")
-    SHODAN_API_KEY: str   = os.getenv("SHODAN_API_KEY", "")
-    ABUSEIPDB_API_KEY: str = os.getenv("ABUSEIPDB_API_KEY", "")
+    IPINFO_TOKEN: str          = os.getenv("IPINFO_TOKEN", "")
+    IPREGISTRY_API_KEY: str    = os.getenv("IPREGISTRY_API_KEY", "")
+    MAXMIND_ACCOUNT_ID: str    = os.getenv("MAXMIND_ACCOUNT_ID", "")
+    MAXMIND_LICENSE_KEY: str   = os.getenv("MAXMIND_LICENSE_KEY", "")
+    SPUR_API_TOKEN: str        = os.getenv("SPUR_API_TOKEN", "")
+    OPENPHISH_KEY: str         = os.getenv("OPENPHISH_KEY", "")
+    SHODAN_API_KEY: str        = os.getenv("SHODAN_API_KEY", "")
+    ABUSEIPDB_API_KEY: str     = os.getenv("ABUSEIPDB_API_KEY", "")
 
     # Logging
     LOG_LEVEL: str        = os.getenv("LOG_LEVEL", "INFO")
