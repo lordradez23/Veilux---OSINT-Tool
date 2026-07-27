@@ -14,10 +14,10 @@ from veilux_ng.utils.validators import validate_ip
 
 logger = get_logger("ip_intelligence")
 
-_IPINFO_URL    = "https://ipinfo.io/{}/json"
-_IPAPI_URL     = "https://ip-api.com/json/{}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting,query"
-_IPWHOIS_URL   = "https://ipwhois.app/json/{}"              # Free fallback — no key required
-_ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"  # Requires free API key — gracefully skipped if absent
+# ip-api.com: free tier requires plain HTTP (HTTPS is pro-only)
+_IPAPI_URL   = "http://ip-api.com/json/{}?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting,query"
+# ipwho.is: free, no key, HTTPS, generous limits
+_IPWHOIS_URL = "https://ipwho.is/{}"
 
 
 @dataclass
@@ -72,8 +72,9 @@ class IPIntelligence:
         report = IPReport(ip=ip, is_valid=True)
         logger.info("Starting IP intelligence for: %s", ip)
 
-        self._query_ipinfo(ip, report)
         self._query_ipapi(ip, report)
+        if not report.country:
+            self._query_ipwhois(ip, report)
         self._calculate_risk(report)
 
         if report.latitude and report.longitude:
@@ -88,24 +89,6 @@ class IPIntelligence:
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
-
-    def _query_ipinfo(self, ip: str, report: IPReport) -> None:
-        resp = safe_request(_IPINFO_URL.format(ip), timeout=8)
-        if not resp or resp.status_code != 200:
-            return
-        try:
-            data = resp.json()
-            report.hostname = data.get("hostname")
-            report.org = data.get("org")
-            report.timezone = data.get("timezone")
-            report.postal = data.get("postal")
-            loc = data.get("loc", "")
-            if "," in loc:
-                lat, lon = loc.split(",")
-                report.latitude = float(lat)
-                report.longitude = float(lon)
-        except Exception as exc:
-            logger.debug("ipinfo parse error for %s: %s", ip, exc)
 
     def _query_ipapi(self, ip: str, report: IPReport) -> None:
         resp = safe_request(_IPAPI_URL.format(ip), timeout=8)
@@ -130,6 +113,26 @@ class IPIntelligence:
                 report.timezone = data.get("timezone")
         except Exception as exc:
             logger.debug("ip-api parse error for %s: %s", ip, exc)
+
+    def _query_ipwhois(self, ip: str, report: IPReport) -> None:
+        resp = safe_request(_IPWHOIS_URL.format(ip), timeout=8)
+        if not resp or resp.status_code != 200:
+            return
+        try:
+            data = resp.json()
+            if not data.get("success", True) is False:
+                report.country = data.get("country")
+                report.country_code = data.get("country_code")
+                report.region = data.get("region")
+                report.city = data.get("city")
+                report.postal = data.get("postal")
+                report.isp = data.get("connection", {}).get("isp")
+                report.asn = str(data.get("connection", {}).get("asn", "")) or None
+                report.timezone = data.get("timezone", {}).get("id")
+                report.latitude = data.get("latitude")
+                report.longitude = data.get("longitude")
+        except Exception as exc:
+            logger.debug("ipwho.is parse error for %s: %s", ip, exc)
 
     @staticmethod
     def _calculate_risk(report: IPReport) -> None:

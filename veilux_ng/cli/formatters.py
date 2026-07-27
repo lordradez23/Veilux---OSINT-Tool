@@ -73,27 +73,35 @@ def _format_result(feature: str, result) -> list[str]:
             lines.append(f"  Scam reports: {G}{result.scam_reports}{R}")
 
     elif feature == "ip_intelligence":
-        lines += [
-            f"  IP          : {G}{result.ip}{R}",
-            f"  Hostname    : {G}{result.hostname or 'N/A'}{R}",
-            f"  Location    : {G}{result.city or 'N/A'}, {result.country or 'N/A'}{R}",
-            f"  ISP         : {G}{result.isp or 'N/A'}{R}",
-            f"  ASN         : {G}{result.asn or 'N/A'}{R}",
-            f"  Proxy/VPN   : {G}{result.is_proxy}{R}",
-        ]
-        # Color-code risk score
-        if result.risk_score >= 60:
-            risk_color = C.RED
-        elif result.risk_score >= 30:
-            risk_color = C.YELLOW
+        if result.is_private:
+            lines += [
+                f"  IP          : {G}{result.ip}{R}",
+                f"  Type        : {C.YELLOW}Private / Reserved{R}",
+                f"  Note        : {C.YELLOW}Private IPs have no public geolocation data.{R}",
+                f"  Tip         : {C.YELLOW}Enter a public IP (e.g. 8.8.8.8) for full intelligence.{R}",
+            ]
+        elif not result.is_valid:
+            lines.append(f"  {C.RED}Invalid IP address.{R}")
         else:
-            risk_color = C.GREEN
-        lines.append(f"  Risk score  : {risk_color}{result.risk_score}/100{R}")
-        # Risk flags
-        for flag in getattr(result, "risk_flags", []):
-            lines.append(f"    {C.RED}⚑{R} {flag}")
-        if result.maps_url:
-            lines.append(f"  Maps        : {G}{result.maps_url}{R}")
+            lines += [
+                f"  IP          : {G}{result.ip}{R}",
+                f"  Country     : {G}{result.country or 'N/A'} ({result.country_code or '??'}){R}",
+                f"  Region      : {G}{result.region or 'N/A'}{R}",
+                f"  City        : {G}{result.city or 'N/A'}{R}",
+                f"  Postal      : {G}{result.postal or 'N/A'}{R}",
+                f"  Timezone    : {G}{result.timezone or 'N/A'}{R}",
+                f"  ISP         : {G}{result.isp or 'N/A'}{R}",
+                f"  Org         : {G}{result.org or 'N/A'}{R}",
+                f"  ASN         : {G}{result.asn or 'N/A'}{R}",
+                f"  Proxy/VPN   : {C.RED if result.is_proxy else G}{result.is_proxy}{R}",
+                f"  Hosting     : {C.YELLOW if result.is_hosting else G}{result.is_hosting}{R}",
+            ]
+            risk_color = C.RED if result.risk_score >= 60 else C.YELLOW if result.risk_score >= 30 else G
+            lines.append(f"  Risk score  : {risk_color}{result.risk_score}/100{R}")
+            for flag in result.risk_flags:
+                lines.append(f"    {C.RED}⚑{R} {flag}")
+            if result.maps_url:
+                lines.append(f"  Maps        : {G}{result.maps_url}{R}")
 
     elif feature == "domain_analysis":
         lines += [
