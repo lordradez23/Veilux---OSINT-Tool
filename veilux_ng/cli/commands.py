@@ -7,6 +7,10 @@ Run: python -m veilux_ng.main [--feature FEATURE] [target]
 import argparse
 import sys
 
+# Force UTF-8 on Windows terminals (cp1252 breaks box-drawing and emoji chars)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 import colorama
 colorama.init()
 
@@ -86,14 +90,8 @@ def run_cli() -> None:
             print(format_report(report))
             summary.append((line, report.detected_type, ", ".join(report.results.keys()), ", ".join(report.errors.keys())))
             if args.output:
-                out_path = Path(args.output).with_name(f"{Path(line).stem}_report.{args.format}")
-                # Use reporter to write file
-                from veilux_ng.core.reporter import export_json, export_txt
-                formatted = format_report(report)
-                if args.format == "json":
-                    export_json(report, out_path)
-                else:
-                    export_txt(report, formatted, out_path)
+                out_path = Path(args.output).with_name(f"{Path(line).stem}_report.txt")
+                out_path.write_text(format_report(report), encoding="utf-8")
         # Print summary table
         print(f"\n{C.CYAN}Batch Summary:{R}")
         for tgt, typ, mods, errs in summary:
@@ -108,12 +106,7 @@ def run_cli() -> None:
         formatted = format_report(report)
         print(formatted)
         if args.output:
-            out_path = Path(args.output)
-            from veilux_ng.core.reporter import export_json, export_txt
-            if args.format == "json":
-                export_json(report, out_path)
-            else:
-                export_txt(report, formatted, out_path)
+            Path(args.output).write_text(formatted, encoding="utf-8")
         return
 
     # ---------------------------------------------------------------
@@ -135,7 +128,7 @@ def run_cli() -> None:
 
         if choice == "8":
             for c in engine.compliance_report():
-                status = "✅" if c.is_compliant else "❌"
+                status = "[OK]" if c.is_compliant else "[X]"
                 print(f"  {status} {c.feature:<22} {c.ndpa_section}")
             continue
 

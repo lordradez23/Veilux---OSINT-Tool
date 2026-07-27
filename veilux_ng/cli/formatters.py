@@ -3,8 +3,13 @@ VEILUX-NG CLI Formatters
 Converts report dataclasses into readable terminal output.
 """
 
+import sys
 import colorama
 colorama.init()
+
+# Force UTF-8 output on Windows so box-drawing chars render correctly
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from veilux_ng.core.engine import InvestigationReport
 
@@ -31,7 +36,7 @@ def print_banner() -> None:
 
 
 def _divider(title: str = "") -> str:
-    line = "─" * 55
+    line = "-" * 55
     return f"\n{C.YELLOW}{line}{S.RESET_ALL}" + (f"\n  {C.WHITE}{title}{S.RESET_ALL}" if title else "")
 
 
@@ -99,7 +104,7 @@ def _format_result(feature: str, result) -> list[str]:
             risk_color = C.RED if result.risk_score >= 60 else C.YELLOW if result.risk_score >= 30 else G
             lines.append(f"  Risk score  : {risk_color}{result.risk_score}/100{R}")
             for flag in result.risk_flags:
-                lines.append(f"    {C.RED}⚑{R} {flag}")
+                lines.append(f"    {C.RED}[!]{R} {flag}")
             if result.maps_url:
                 lines.append(f"  Maps        : {G}{result.maps_url}{R}")
 
@@ -130,7 +135,7 @@ def _format_result(feature: str, result) -> list[str]:
         if result.impersonated_brand:
             lines.append(f"  Brand hit   : {C.RED}{result.impersonated_brand}{R}")
         for flag in result.flags:
-            lines.append(f"    {C.RED}⚑{R} {flag}")
+            lines.append(f"    {C.RED}[!]{R} {flag}")
 
     elif feature == "social_discovery":
         lines.append(f"  Found on {G}{result.total_found}{R} platform(s):")
