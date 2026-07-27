@@ -135,12 +135,21 @@ def _format_result(feature: str, result) -> list[str]:
             f"  Hosting IP  : {G}{result.hosting_ip or 'N/A'}{R}",
             f"  Hosting org : {G}{result.hosting_org or 'N/A'}{R}",
         ]
+        if result.is_available is not None:
+            avail_color = G if result.is_available else C.RED
+            lines.append(f"  Available   : {avail_color}{'Yes' if result.is_available else 'No'}{R}")
+        if result.valuation_usd is not None:
+            lines.append(f"  Valuation   : {G}${result.valuation_usd:,.2f}{R}")
+        if result.domain_rating is not None:
+            lines.append(f"  Domain Rating: {G}{result.domain_rating}/100{R}" + (f" (Ahrefs rank #{result.ahrefs_rank})" if result.ahrefs_rank else ""))
         if result.ssl:
             lines.append(f"  SSL valid   : {G}{result.ssl.valid}{R}")
             lines.append(f"  SSL issuer  : {G}{result.ssl.issuer or 'N/A'}{R}")
             lines.append(f"  SSL expires : {G}{result.ssl.expires or 'N/A'} ({result.ssl.days_until_expiry} days){R}")
         for rtype, records in result.dns_records.items():
             lines.append(f"  DNS {rtype:<6}  : {G}{', '.join(records[:3])}{R}")
+        if result.data_sources:
+            lines.append(f"  Sources     : {G}{', '.join(result.data_sources)}{R}")
 
     elif feature == "phishing_detector":
         level_color = C.RED if result.risk_level in ("CRITICAL", "HIGH") else C.YELLOW
