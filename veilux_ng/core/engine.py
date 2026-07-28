@@ -4,7 +4,6 @@ Single orchestration point for all 7 OSINT features.
 Every invocation is compliance-checked before execution.
 """
 
-import ipaddress
 import re
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -12,15 +11,13 @@ from typing import Any, Optional
 from veilux_ng.core.compliance import ComplianceEngine
 from veilux_ng.core.logger import get_logger
 from veilux_ng.core.exceptions import ValidationError
-from veilux_ng.features.url_shortener import URLShortener
 from veilux_ng.features.phishing_detector import PhishingDetector
 from veilux_ng.features.social_discovery import SocialDiscovery
 from veilux_ng.features.phone_analysis import PhoneAnalysis
 from veilux_ng.features.domain_analysis import DomainAnalysis
 from veilux_ng.features.image_analysis import ImageAnalysis
-from veilux_ng.features.ip_intelligence import IPIntelligence
 from veilux_ng.utils.validators import (
-    validate_ip, validate_phone, validate_url, validate_domain, validate_username,
+    validate_phone, validate_url, validate_domain, validate_username,
 )
 
 logger = get_logger("engine")
@@ -64,15 +61,13 @@ class VeiluxEngine:
     """
 
     def __init__(self) -> None:
-        self.url_shortener     = URLShortener()
         self.phishing_detector = PhishingDetector()
         self.social_discovery  = SocialDiscovery()
         self.phone_analysis    = PhoneAnalysis()
         self.domain_analysis   = DomainAnalysis()
         self.image_analysis    = ImageAnalysis()
-        self.ip_intelligence   = IPIntelligence()
         self.compliance        = ComplianceEngine()
-        logger.info("VeiluxEngine initialised — all 7 modules loaded.")
+        logger.info("VeiluxEngine initialised — 5 modules loaded.")
 
     # ------------------------------------------------------------------
     # Public API
@@ -97,11 +92,6 @@ class VeiluxEngine:
             self._run_single(identifier, feature, report)
 
         return report
-
-    def shorten_url(self, long_url: str, campaign: Optional[str] = None):
-        """Convenience wrapper for URL shortening."""
-        self.compliance.assert_compliant("url_shortener")
-        return self.url_shortener.shorten(long_url, campaign)
 
     def compliance_report(self) -> list:
         """Return the full NDPA 2023 compliance status for all features."""
@@ -134,9 +124,8 @@ class VeiluxEngine:
 
         feature_map = {
             "phone":   ["phone_analysis"],
-            "ip":      ["ip_intelligence"],
             "domain":  ["domain_analysis", "phishing_detector"],
-            "url":     ["phishing_detector", "url_shortener"],
+            "url":     ["phishing_detector"],
             "image":   ["image_analysis"],
             "username":["social_discovery"],
         }
@@ -146,13 +135,11 @@ class VeiluxEngine:
 
     def _dispatch(self, identifier: str, feature: str) -> Any:
         dispatch_table = {
-            "url_shortener":     lambda i: self.url_shortener.shorten(i),
             "phishing_detector": lambda i: self.phishing_detector.analyze(i),
             "social_discovery":  lambda i: self.social_discovery.discover(i),
             "phone_analysis":    lambda i: self.phone_analysis.analyze(i),
             "domain_analysis":   lambda i: self.domain_analysis.analyze(i),
             "image_analysis":    lambda i: self.image_analysis.analyze(i),
-            "ip_intelligence":   lambda i: self.ip_intelligence.analyze(i),
         }
         handler = dispatch_table.get(feature)
         if not handler:
@@ -169,12 +156,6 @@ class VeiluxEngine:
         # Phone number
         if re.match(r"^(\+?234|0)[789]\d{9}$", re.sub(r"[\s\-()]", "", identifier)):
             return "phone"
-        # IP address
-        try:
-            ipaddress.ip_address(identifier)
-            return "ip"
-        except ValueError:
-            pass
         # Local image file path (absolute or relative, any OS separator)
         _IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
         if any(identifier.lower().endswith(ext) for ext in _IMAGE_EXTS):
@@ -191,6 +172,6 @@ class VeiluxEngine:
     @staticmethod
     def _all_features() -> list[str]:
         return [
-            "url_shortener", "phishing_detector", "social_discovery",
-            "phone_analysis", "domain_analysis", "image_analysis", "ip_intelligence",
+            "phishing_detector", "social_discovery",
+            "phone_analysis", "domain_analysis", "image_analysis",
         ]
