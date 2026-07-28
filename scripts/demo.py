@@ -1,6 +1,6 @@
 """
 VEILUX-NG Demo Script
-Exercises all 7 features with safe, public test data.
+Exercises all 5 features with safe, public test data.
 Run: python scripts/demo.py
 """
 
@@ -30,30 +30,8 @@ def run_demo() -> None:
         print(f"  Carrier   : {p.carrier_name}")
         print(f"  Country   : {p.country}")
 
-    # 2. IP Intelligence
-    section("2. IP Intelligence")
-    r = engine.investigate("8.8.8.8", feature="ip_intelligence")
-    ip = r.results.get("ip_intelligence")
-    if ip:
-        print(f"  IP          : {ip.ip}")
-        print(f"  Location    : {ip.city}, {ip.country} ({ip.country_code})")
-        print(f"  ISP         : {ip.isp}")
-        print(f"  ASN         : {ip.asn}" + (f" ({ip.asn_name})" if ip.asn_name else ""))
-        print(f"  Carrier     : {ip.carrier or 'N/A'}")
-        print(f"  Company     : {ip.company_name or 'N/A'}" + (f" [{ip.company_type}]" if ip.company_type else ""))
-        print(f"  VPN         : {ip.is_vpn}")
-        print(f"  Proxy       : {ip.is_proxy}")
-        print(f"  Tor         : {ip.is_tor}")
-        print(f"  Relay       : {ip.is_relay}")
-        print(f"  Hosting     : {ip.is_hosting}")
-        print(f"  Threat lvl  : {ip.threat_level or 'N/A'}")
-        if ip.spur_tunnels:
-            print(f"  Spur tunnels: {', '.join(ip.spur_tunnels)}")
-        print(f"  Risk        : {ip.risk_score}/100")
-        print(f"  Sources     : {', '.join(ip.data_sources)}")
-
-    # 3. Domain Analysis
-    section("3. Domain Analysis")
+    # 2. Domain Analysis
+    section("2. Domain Analysis")
     r = engine.investigate("example.com", feature="domain_analysis")
     d = r.results.get("domain_analysis")
     if d:
@@ -63,8 +41,8 @@ def run_demo() -> None:
         print(f"  SSL Valid : {d.ssl.valid if d.ssl else 'N/A'}")
         print(f"  SSL CA    : {d.ssl.issuer if d.ssl else 'N/A'}")
 
-    # 4. Phishing Detection
-    section("4. Phishing Detection")
+    # 3. Phishing Detection
+    section("3. Phishing Detection")
     r = engine.investigate("http://paypa1.com/login", feature="phishing_detector")
     ph = r.results.get("phishing_detector")
     if ph:
@@ -76,8 +54,8 @@ def run_demo() -> None:
         for flag in ph.flags:
             print(f"    ⚑ {flag}")
 
-    # 5. Social Discovery
-    section("5. Social Discovery")
+    # 4. Social Discovery
+    section("4. Social Discovery")
     r = engine.investigate("torvalds", feature="social_discovery")
     s = r.results.get("social_discovery")
     if s:
@@ -86,16 +64,8 @@ def run_demo() -> None:
         for profile in s.found:
             print(f"    [+] {profile.platform}: {profile.url}")
 
-    # 6. URL Shortener
-    section("6. URL Shortener")
-    result = engine.shorten_url("https://www.example.com/very/long/path?query=value", campaign="demo")
-    print(f"  Long URL  : {result.long_url}")
-    print(f"  Short URL : {result.short_url}")
-    print(f"  Code      : {result.short_code}")
-    print(f"  Campaign  : {result.campaign}")
-
-    # 7. Image Analysis
-    section("7. Image Analysis")
+    # 5. Image Analysis
+    section("5. Image Analysis")
     r = engine.investigate(
         "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png",
         feature="image_analysis",
