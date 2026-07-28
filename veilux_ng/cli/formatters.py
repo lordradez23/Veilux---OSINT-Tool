@@ -77,55 +77,6 @@ def _format_result(feature: str, result) -> list[str]:
         if result.scam_reports is not None:
             lines.append(f"  Scam reports: {G}{result.scam_reports}{R}")
 
-    elif feature == "ip_intelligence":
-        if not result.is_valid:
-            lines.append(f"  {C.RED}Invalid IP address.{R}")
-        else:
-            private_tag = f" {C.YELLOW}[Private Range]{R}" if result.is_private else ""
-            lines += [
-                f"  IP          : {G}{result.ip}{R}{private_tag}",
-                f"  Country     : {G}{result.country or 'Private Network'}{R}" + (f" ({result.country_code})" if result.country_code else ""),
-                f"  Region      : {G}{result.region or 'N/A'}{R}",
-                f"  City        : {G}{result.city or 'N/A'}{R}",
-                f"  Postal      : {G}{result.postal or 'N/A'}{R}",
-                f"  Timezone    : {G}{result.timezone or 'N/A'}{R}",
-                f"  ISP         : {G}{result.isp or 'N/A'}{R}",
-                f"  Org         : {G}{result.org or 'N/A'}{R}",
-                f"  ASN         : {G}{result.asn or 'N/A'}{R}" + (f" ({result.asn_name})" if result.asn_name else ""),
-                f"  Carrier     : {G}{result.carrier or 'N/A'}{R}",
-            ]
-            if result.company_name:
-                lines.append(
-                    f"  Company     : {G}{result.company_name}{R}"
-                    + (f" [{result.company_type}]" if result.company_type else "")
-                    + (f" — {result.company_domain}" if result.company_domain else "")
-                )
-            # Privacy / threat flags
-            def _flag(label: str, val: bool) -> str:
-                return f"  {label:<12}: {(C.RED + 'YES' if val else G + 'No')}{R}"
-            lines += [
-                _flag("VPN", result.is_vpn),
-                _flag("Proxy", result.is_proxy),
-                _flag("Tor", result.is_tor),
-                _flag("Relay", result.is_relay),
-                _flag("Hosting", result.is_hosting),
-            ]
-            if result.threat_level:
-                tl_color = C.RED if result.threat_level in ("HIGH", "MEDIUM") else G
-                lines.append(f"  Threat lvl  : {tl_color}{result.threat_level}{R}")
-            if result.spur_tunnels:
-                lines.append(f"  Spur tunnels: {C.RED}{', '.join(result.spur_tunnels)}{R}")
-            if result.spur_infrastructure:
-                lines.append(f"  Spur infra  : {C.YELLOW}{result.spur_infrastructure}{R}")
-            risk_color = C.RED if result.risk_score >= 60 else C.YELLOW if result.risk_score >= 30 else G
-            lines.append(f"  Risk score  : {risk_color}{result.risk_score}/100{R}")
-            for flag in result.risk_flags:
-                lines.append(f"    {C.RED}[!]{R} {flag}")
-            if result.maps_url:
-                lines.append(f"  Maps        : {G}{result.maps_url}{R}")
-            if result.data_sources:
-                lines.append(f"  Sources     : {G}{', '.join(result.data_sources)}{R}")
-
     elif feature == "domain_analysis":
         lines += [
             f"  Registrar   : {G}{result.registrar or 'N/A'}{R}",
@@ -170,14 +121,6 @@ def _format_result(feature: str, result) -> list[str]:
             lines.append(f"    {G}[+]{R} {p.platform:<14} {p.url}")
         if result.errors:
             lines.append(f"  Errors on {len(result.errors)} platform(s) (timeout/blocked)")
-
-    elif feature == "url_shortener":
-        lines += [
-            f"  Short URL   : {G}{result.short_url}{R}",
-            f"  Short code  : {G}{result.short_code}{R}",
-            f"  Campaign    : {G}{result.campaign or 'None'}{R}",
-            f"  Created     : {G}{result.created_at}{R}",
-        ]
 
     elif feature == "image_analysis":
         dims = f"{result.width}x{result.height}px" if result.width and result.height else "N/A"
