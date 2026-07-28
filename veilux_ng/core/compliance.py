@@ -22,11 +22,6 @@ class ComplianceResult:
 
 # Legal basis registry — maps each feature to its NDPA exemption
 _COMPLIANCE_REGISTRY: dict[str, dict] = {
-    "url_shortener": {
-        "legal_basis": "Aggregated, anonymised analytics on URLs created by the operator.",
-        "ndpa_section": "Section 24 (Data Minimisation) — IPs anonymised before storage.",
-        "public": True,
-    },
     "phishing_detector": {
         "legal_basis": "Analysis of publicly accessible URLs and domain registration records.",
         "ndpa_section": "Section 31 (Public Data Exemption) — WHOIS and SSL are public.",
@@ -50,11 +45,6 @@ _COMPLIANCE_REGISTRY: dict[str, dict] = {
     "image_analysis": {
         "legal_basis": "EXIF metadata embedded in publicly accessible images.",
         "ndpa_section": "Section 31 (Public Data Exemption) — metadata published by image owner.",
-        "public": True,
-    },
-    "ip_intelligence": {
-        "legal_basis": "City-level geolocation from public IP-to-ASN/GeoIP databases.",
-        "ndpa_section": "Section 31 (Public Data Exemption) — GeoIP is publicly licensed data.",
         "public": True,
     },
 }
