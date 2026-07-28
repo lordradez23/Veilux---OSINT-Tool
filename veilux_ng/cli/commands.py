@@ -20,39 +20,32 @@ from veilux_ng.cli.formatters import format_report, print_banner
 
 _FEATURES = [
     "phone_analysis",
-    "ip_intelligence",
     "domain_analysis",
     "phishing_detector",
     "social_discovery",
-    "url_shortener",
     "image_analysis",
 ]
 
 _MENU = """
-{Y}[1]{R} Phone Analysis        {Y}[2]{R} IP Intelligence
-{Y}[3]{R} Domain Analysis       {Y}[4]{R} Phishing Detector
-{Y}[5]{R} Social Discovery      {Y}[6]{R} URL Shortener
-{Y}[7]{R} Image Analysis        {Y}[8]{R} Compliance Report
+{Y}[1]{R} Phone Analysis        {Y}[2]{R} Domain Analysis
+{Y}[3]{R} Phishing Detector     {Y}[4]{R} Social Discovery
+{Y}[5]{R} Image Analysis        {Y}[6]{R} Compliance Report
 {Y}[0]{R} Exit
 """
 
 _FEATURE_MAP = {
     "1": "phone_analysis",
-    "2": "ip_intelligence",
-    "3": "domain_analysis",
-    "4": "phishing_detector",
-    "5": "social_discovery",
-    "6": "url_shortener",
-    "7": "image_analysis",
+    "2": "domain_analysis",
+    "3": "phishing_detector",
+    "4": "social_discovery",
+    "5": "image_analysis",
 }
 
 _PROMPTS = {
     "phone_analysis":    "Enter Nigerian phone number (e.g. 08031234567): ",
-    "ip_intelligence":   "Enter IP address (e.g. 8.8.8.8): ",
     "domain_analysis":   "Enter domain (e.g. example.com): ",
     "phishing_detector": "Enter URL to check (e.g. https://...): ",
     "social_discovery":  "Enter username (alphanumeric/underscore only): ",
-    "url_shortener":     "Enter URL to shorten (e.g. https://...): ",
     "image_analysis":    "Enter image URL or local file path: ",
 }
 
@@ -126,7 +119,7 @@ def run_cli() -> None:
             print(f"{C.RED}Goodbye.{R}")
             break
 
-        if choice == "8":
+        if choice == "6":
             for c in engine.compliance_report():
                 status = "[OK]" if c.is_compliant else "[X]"
                 print(f"  {status} {c.feature:<22} {c.ndpa_section}")
