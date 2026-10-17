@@ -257,6 +257,3 @@ KNOWN_BRANDS: list[str] = [
     "yahoo", "gmail", "outlook", "linkedin", "tiktok",
     "whatsapp", "telegram", "snapchat",
 ]
-
-# Backwards-compat alias
-NIGERIAN_STATE_MAP = NIGERIAN_LANDLINE_MAP

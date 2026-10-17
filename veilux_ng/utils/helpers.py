@@ -1,9 +1,8 @@
 """
 VEILUX-NG Helper Utilities
-Shared helpers used across feature modules.
+Shared helpers used across the four intelligence modules.
 """
 
-import hashlib
 import ipaddress
 import time
 from typing import Optional
@@ -24,25 +23,6 @@ _DEFAULT_HEADERS = {
     ),
     "Accept-Language": "en-US,en;q=0.9",
 }
-
-
-def anonymize_ip(ip: str) -> str:
-    """
-    Anonymise an IP address for storage (NDPA Section 24 — data minimisation).
-    IPv4: zero last octet  →  192.168.1.x
-    IPv6: zero last 80 bits
-    """
-    try:
-        addr = ipaddress.ip_address(ip)
-        if addr.version == 4:
-            parts = ip.split(".")
-            return f"{parts[0]}.{parts[1]}.{parts[2]}.x"
-        else:
-            # Keep first 48 bits only
-            packed = addr.packed[:6] + b"\x00" * 10
-            return str(ipaddress.IPv6Address(packed)) + "/48"
-    except ValueError:
-        return "unknown"
 
 
 def safe_request(
@@ -74,27 +54,6 @@ def safe_request(
     return None
 
 
-def parse_user_agent(ua_string: str) -> dict:
-    """
-    Extract device type and browser family from a User-Agent string.
-    Lightweight — no external library required.
-    """
-    ua = ua_string.lower()
-    device = "Desktop"
-    if any(k in ua for k in ("android", "iphone", "ipad", "mobile")):
-        device = "Mobile"
-    elif "tablet" in ua:
-        device = "Tablet"
-
-    browser = "Unknown"
-    for name in ("chrome", "firefox", "safari", "edge", "opera", "msie", "trident"):
-        if name in ua:
-            browser = name.capitalize()
-            break
-
-    return {"device_type": device, "browser": browser}
-
-
 def extract_domain(url: str) -> str:
     """Return the bare domain from a URL (strips www.)."""
     parsed = urlparse(url if "://" in url else f"http://{url}")
@@ -114,3 +73,19 @@ def levenshtein(s1: str, s2: str) -> int:
             curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (c1 != c2)))
         prev = curr
     return prev[-1]
+
+
+def parse_user_agent(ua_string: str) -> dict:
+    """Extract device type and browser family from a User-Agent string."""
+    ua = ua_string.lower()
+    device = "Desktop"
+    if any(k in ua for k in ("android", "iphone", "ipad", "mobile")):
+        device = "Mobile"
+    elif "tablet" in ua:
+        device = "Tablet"
+    browser = "Unknown"
+    for name in ("chrome", "firefox", "safari", "edge", "opera", "msie", "trident"):
+        if name in ua:
+            browser = name.capitalize()
+            break
+    return {"device_type": device, "browser": browser}

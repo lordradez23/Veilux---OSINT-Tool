@@ -1,6 +1,6 @@
 """
 VEILUX-NG Input Validators
-All user-supplied inputs are sanitised here before reaching feature modules.
+All user-supplied inputs are sanitised here before reaching the four modules.
 """
 
 import re
@@ -50,8 +50,3 @@ def validate_username(username: str) -> bool:
     """Return True if username contains only safe alphanumeric/underscore chars."""
     return bool(re.match(r"^[a-zA-Z0-9_.\-]{1,50}$", username))
 
-
-def validate_mac(mac: str) -> bool:
-    """Return True if mac matches standard MAC address formats."""
-    pattern = r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$"
-    return bool(re.match(pattern, mac.strip()))
