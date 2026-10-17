@@ -20,6 +20,7 @@ import phonenumbers
 from phonenumbers import geocoder, carrier, timezone as pn_timezone
 
 from veilux_ng.core.logger import get_logger
+from veilux_ng.core.result import ModuleResult
 from veilux_ng.utils.constants import (
     NIGERIAN_CARRIER_MAP,
     NIGERIAN_MOBILE_STATE_MAP,
@@ -32,13 +33,14 @@ logger = get_logger("phone_analysis")
 
 _NIGERIA_CODE = "NG"
 _SCAM_CHECK_URL = "https://api.shouldianswer.net/v1/phone/{}"
+_VERIPHONE_URL = "https://api.veriphone.io/v2/verify"
 
 
 @dataclass
-class PhoneReport:
-    raw_input: str
-    normalized: str
-    is_valid: bool
+class PhoneReport(ModuleResult):
+    raw_input: str = ""
+    normalized: str = ""
+    is_valid: bool = False
     carrier_name: Optional[str] = None
     network_type: str = "Mobile"
     country: Optional[str] = None
@@ -48,6 +50,10 @@ class PhoneReport:
     timezones: Optional[list] = None
     scam_reports: Optional[int] = None
     scam_score: Optional[float] = None
+    veriphone_valid: Optional[bool] = None
+    veriphone_line_type: Optional[str] = None
+    veriphone_carrier: Optional[str] = None
+    veriphone_country: Optional[str] = None
     notes: str = ""
 
 
@@ -65,6 +71,8 @@ class PhoneAnalysis:
 
         if not validate_phone(raw):
             return PhoneReport(
+                module="phone_analysis",
+                input_value=raw,
                 raw_input=raw,
                 normalized=raw,
                 is_valid=False,
@@ -107,7 +115,11 @@ class PhoneAnalysis:
         # --- Scam check ---
         scam_reports, scam_score = self._check_scam(normalized)
 
+        vp_valid, vp_line_type, vp_carrier, vp_country = self._check_veriphone(normalized)
+
         report = PhoneReport(
+            module="phone_analysis",
+            input_value=raw,
             raw_input=raw,
             normalized=normalized,
             is_valid=is_valid,
@@ -120,6 +132,10 @@ class PhoneAnalysis:
             timezones=timezones,
             scam_reports=scam_reports,
             scam_score=scam_score,
+            veriphone_valid=vp_valid,
+            veriphone_line_type=vp_line_type,
+            veriphone_carrier=vp_carrier,
+            veriphone_country=vp_country,
         )
         logger.info(
             "Phone analysis: %s → carrier=%s region=%s",
@@ -201,6 +217,31 @@ class PhoneAnalysis:
     def _extract_prefix(normalized: str) -> Optional[str]:
         local = "0" + normalized[4:] if normalized.startswith("+234") else normalized
         return local[:4] if len(local) >= 4 else None
+
+    # ------------------------------------------------------------------
+    # Veriphone enrichment
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _check_veriphone(normalized: str) -> tuple[Optional[bool], Optional[str], Optional[str], Optional[str]]:
+        from config.settings import settings
+        params: dict = {"phone": normalized}
+        if settings.VERIPHONE_API_KEY:
+            params["key"] = settings.VERIPHONE_API_KEY
+        resp = safe_request(_VERIPHONE_URL, params=params, timeout=8)
+        if resp and resp.status_code == 200:
+            try:
+                d = resp.json()
+                if d.get("status") == "success":
+                    return (
+                        d.get("phone_valid"),
+                        d.get("phone_type"),
+                        d.get("carrier") or None,
+                        d.get("country") or None,
+                    )
+            except Exception:
+                pass
+        return None, None, None, None
 
     # ------------------------------------------------------------------
     # Scam check

@@ -10,6 +10,7 @@ from typing import Optional
 
 from veilux_ng.core.exceptions import ValidationError
 from veilux_ng.core.logger import get_logger
+from veilux_ng.core.result import ModuleResult
 from veilux_ng.utils.helpers import safe_request
 from veilux_ng.utils.validators import validate_username
 
@@ -48,8 +49,8 @@ class ProfileResult:
 
 
 @dataclass
-class SocialDiscoveryReport:
-    username: str
+class SocialDiscoveryReport(ModuleResult):
+    username: str = ""
     found: list[ProfileResult] = field(default_factory=list)
     not_found: list[ProfileResult] = field(default_factory=list)
     errors: list[ProfileResult] = field(default_factory=list)
@@ -70,7 +71,11 @@ class SocialDiscovery:
         if not validate_username(username):
             raise ValidationError(f"Invalid username: '{username}'. Use alphanumeric/underscore only.")
 
-        report = SocialDiscoveryReport(username=username)
+        report = SocialDiscoveryReport(
+            module="social_discovery",
+            input_value=username,
+            username=username,
+        )
         logger.info("Starting social discovery for username: %s", username)
 
         for platform, config in _PLATFORMS.items():

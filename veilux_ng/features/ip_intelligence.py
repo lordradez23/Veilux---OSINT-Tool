@@ -18,6 +18,7 @@ from typing import Optional
 
 from config.settings import settings
 from veilux_ng.core.logger import get_logger
+from veilux_ng.core.result import ModuleResult
 from veilux_ng.utils.helpers import safe_request
 from veilux_ng.utils.validators import validate_ip
 
@@ -32,9 +33,9 @@ _IPWHOIS_URL    = "https://ipwho.is/{}"
 
 
 @dataclass
-class IPReport:
-    ip: str
-    is_valid: bool
+class IPReport(ModuleResult):
+    ip: str = ""
+    is_valid: bool = False
     is_private: bool = False
     # Geolocation
     country: Optional[str] = None
@@ -85,7 +86,13 @@ class IPIntelligence:
     def analyze(self, ip: str) -> IPReport:
         ip = ip.strip()
         if not validate_ip(ip):
-            return IPReport(ip=ip, is_valid=False, notes="Invalid IP address format.")
+            return IPReport(
+                module="ip_intelligence",
+                input_value=ip,
+                ip=ip,
+                is_valid=False,
+                notes="Invalid IP address format.",
+            )
 
         is_private = False
         try:
@@ -94,7 +101,13 @@ class IPIntelligence:
         except ValueError:
             pass
 
-        report = IPReport(ip=ip, is_valid=True, is_private=is_private)
+        report = IPReport(
+            module="ip_intelligence",
+            input_value=ip,
+            ip=ip,
+            is_valid=True,
+            is_private=is_private,
+        )
         logger.info("Starting IP intelligence for: %s", ip)
 
         # --- Premium providers (run when keys present) ---
