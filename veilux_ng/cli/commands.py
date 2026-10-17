@@ -1,13 +1,12 @@
 """
 VEILUX-NG CLI Commands
-Interactive menu + argparse-based dispatch.
+Interactive menu + argparse-based dispatch for four OSINT modules.
 Run: python -m veilux_ng.main [--feature FEATURE] [target]
 """
 
 import argparse
 import sys
 
-# Force UTF-8 on Windows terminals (cp1252 breaks box-drawing and emoji chars)
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -17,58 +16,57 @@ colorama.init()
 from pathlib import Path
 from veilux_ng import VeiluxEngine, __version__
 from veilux_ng.cli.formatters import format_report, print_banner
+from veilux_ng.core.reporter import export_json, export_txt
 
 _FEATURES = [
     "phone_analysis",
-    "domain_analysis",
-    "phishing_detector",
+    "ip_intelligence",
     "social_discovery",
-    "image_analysis",
+    "url_intelligence",
 ]
 
 _MENU = """
-{Y}[1]{R} Phone Analysis        {Y}[2]{R} Domain Analysis
-{Y}[3]{R} Phishing Detector     {Y}[4]{R} Social Discovery
-{Y}[5]{R} Image Analysis        {Y}[6]{R} Compliance Report
-{Y}[0]{R} Exit
+{Y}[1]{R} Phone Intelligence     {Y}[2]{R} IP Intelligence
+{Y}[3]{R} Social Discovery       {Y}[4]{R} URL Intelligence
+{Y}[5]{R} Compliance Report      {Y}[0]{R} Exit
 """
 
 _FEATURE_MAP = {
     "1": "phone_analysis",
-    "2": "domain_analysis",
-    "3": "phishing_detector",
-    "4": "social_discovery",
-    "5": "image_analysis",
+    "2": "ip_intelligence",
+    "3": "social_discovery",
+    "4": "url_intelligence",
 }
 
 _PROMPTS = {
-    "phone_analysis":    "Enter Nigerian phone number (e.g. 08031234567): ",
-    "domain_analysis":   "Enter domain (e.g. example.com): ",
-    "phishing_detector": "Enter URL to check (e.g. https://...): ",
-    "social_discovery":  "Enter username (alphanumeric/underscore only): ",
-    "image_analysis":    "Enter image URL or local file path: ",
+    "phone_analysis":   "Enter Nigerian phone number (e.g. 08031234567): ",
+    "ip_intelligence":  "Enter IP address (IPv4 or IPv6): ",
+    "social_discovery": "Enter username (alphanumeric/underscore only): ",
+    "url_intelligence": "Enter URL to analyse (e.g. https://...): ",
 }
 
 C = colorama.Fore
 S = colorama.Style
+R = S.RESET_ALL
 
 
 def run_cli() -> None:
-    # Initialize argument parser
-    parser = argparse.ArgumentParser(description="Veilux-NG CLI")
-    parser.add_argument("target", nargs="?", help="Target input (IP, domain, URL, etc.)")
-    parser.add_argument("-f", "--feature", choices=_FEATURES, help="Feature to run explicitly")
-    parser.add_argument("--output", "-o", help="File path to write the report (JSON or TXT).")
+    parser = argparse.ArgumentParser(
+        description="VEILUX-NG — OSINT Framework",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("target", nargs="?", help="Target input (phone, IP, URL, username)")
+    parser.add_argument("-f", "--feature", choices=_FEATURES, help="Run a specific module explicitly")
+    parser.add_argument("--output", "-o", help="File path to write the report")
     parser.add_argument("--format", choices=["json", "txt"], default="json",
-                        help="Output format when using --output (default json).")
-    parser.add_argument("--batch", "-b", help="Path to a text file with one target per line for batch processing.")
-    # If batch mode is used, ignore --target and --feature; they will be read per line.
+                        help="Output format when using --output (default: json)")
+    parser.add_argument("--batch", "-b", help="Path to a text file with one target per line")
     args = parser.parse_args()
 
     engine = VeiluxEngine()
 
     # ---------------------------------------------------------------
-    # Batch mode (non-interactive only)
+    # Batch mode
     # ---------------------------------------------------------------
     if args.batch:
         batch_path = Path(args.batch)
@@ -76,50 +74,53 @@ def run_cli() -> None:
             print(f"{C.RED}Batch file not found: {args.batch}{R}")
             sys.exit(1)
         with batch_path.open("r", encoding="utf-8") as fh:
-            lines = [l.strip() for l in fh.readlines() if l.strip() and not l.strip().startswith("#")]
+            lines = [l.strip() for l in fh if l.strip() and not l.strip().startswith("#")]
         summary = []
         for line in lines:
             report = engine.investigate(line)
-            print(format_report(report))
-            summary.append((line, report.detected_type, ", ".join(report.results.keys()), ", ".join(report.errors.keys())))
+            formatted = format_report(report)
+            print(formatted)
+            summary.append((line, report.detected_type,
+                             ", ".join(report.results.keys()),
+                             ", ".join(report.errors.keys())))
             if args.output:
                 out_path = Path(args.output).with_name(f"{Path(line).stem}_report.txt")
-                out_path.write_text(format_report(report), encoding="utf-8")
-        # Print summary table
+                export_txt(report, formatted, str(out_path))
         print(f"\n{C.CYAN}Batch Summary:{R}")
         for tgt, typ, mods, errs in summary:
             print(f"  {tgt:<30} {typ:<10} {mods:<30} {errs}")
         return
 
     # ---------------------------------------------------------------
-    # Non-interactive single target mode
+    # Non-interactive single target
     # ---------------------------------------------------------------
     if args.target:
         report = engine.investigate(args.target, feature=args.feature)
         formatted = format_report(report)
         print(formatted)
         if args.output:
-            Path(args.output).write_text(formatted, encoding="utf-8")
+            if args.format == "json":
+                export_json(report, args.output)
+            else:
+                export_txt(report, formatted, args.output)
         return
 
     # ---------------------------------------------------------------
-    # Interactive menu (unchanged)
+    # Interactive menu
     # ---------------------------------------------------------------
     print_banner()
     while True:
-        Y, R, G = C.YELLOW, S.RESET_ALL, C.GREEN
-        print(_MENU.format(Y=Y, R=R))
+        print(_MENU.format(Y=C.YELLOW, R=R))
         try:
-            choice = input(f"{G}Select option: {R}").strip()
+            choice = input(f"{C.GREEN}Select option: {R}").strip()
         except (KeyboardInterrupt, EOFError):
-            print(f"\n{C.RED}Goodbye.{R}")
             sys.exit(0)
 
         if choice == "0":
             print(f"{C.RED}Goodbye.{R}")
             break
 
-        if choice == "6":
+        if choice == "5":
             for c in engine.compliance_report():
                 status = "[OK]" if c.is_compliant else "[X]"
                 print(f"  {status} {c.feature:<22} {c.ndpa_section}")
@@ -132,11 +133,21 @@ def run_cli() -> None:
 
         try:
             prompt = _PROMPTS.get(feature, "Enter target: ")
-            target = input(f"{G}{prompt}{R}").strip()
+            target = input(f"{C.GREEN}{prompt}{R}").strip()
             if not target:
                 continue
             report = engine.investigate(target, feature=feature)
-            print(format_report(report))
+            formatted = format_report(report)
+            print(formatted)
+
+            save = input(f"\n{C.YELLOW}Save report? (json/txt/n): {R}").strip().lower()
+            if save in ("json", "txt"):
+                out_path = f"report_{feature}.{save}"
+                if save == "json":
+                    export_json(report, out_path)
+                else:
+                    export_txt(report, formatted, out_path)
+                print(f"{C.GREEN}Saved to {out_path}{R}")
         except Exception as exc:
             print(f"{C.RED}Error: {exc}{R}")
 
