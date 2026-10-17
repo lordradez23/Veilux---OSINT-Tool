@@ -1,6 +1,9 @@
 """
-VEILUX-NG: Next Generation Nigerian OSINT Framework
-Version: 2.0.0 | Author: Lordradeez.exe | NDPA 2023 Compliant
+VEILUX-NG: Integrated OSINT Framework
+Version: 3.0.0 | Author: Lordradeez.exe | NDPA 2023 Compliant
+
+Four modules: Phone Intelligence, IP Intelligence,
+               Social Discovery, URL Intelligence.
 """
 
 from veilux_ng.core.engine import VeiluxEngine
