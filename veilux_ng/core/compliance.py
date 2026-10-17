@@ -22,9 +22,14 @@ class ComplianceResult:
 
 # Legal basis registry — maps each feature to its NDPA exemption
 _COMPLIANCE_REGISTRY: dict[str, dict] = {
-    "phishing_detector": {
-        "legal_basis": "Analysis of publicly accessible URLs and domain registration records.",
-        "ndpa_section": "Section 31 (Public Data Exemption) — WHOIS and SSL are public.",
+    "phone_analysis": {
+        "legal_basis": "Carrier/state derived from public NCC prefix allocation tables.",
+        "ndpa_section": "Section 31 (Public Data Exemption) — prefix data is publicly published by NCC.",
+        "public": True,
+    },
+    "ip_intelligence": {
+        "legal_basis": "City-level geolocation from publicly licensed GeoIP databases.",
+        "ndpa_section": "Section 31 (Public Data Exemption) — GeoIP to city level is not personal data under NDPA.",
         "public": True,
     },
     "social_discovery": {
@@ -32,19 +37,9 @@ _COMPLIANCE_REGISTRY: dict[str, dict] = {
         "ndpa_section": "Section 31 (Public Data Exemption) — public profiles are not private data.",
         "public": True,
     },
-    "phone_analysis": {
-        "legal_basis": "Carrier/state derived from public NCC prefix allocation tables.",
-        "ndpa_section": "Section 31 (Public Data Exemption) — prefix data is publicly published by NCC.",
-        "public": True,
-    },
-    "domain_analysis": {
-        "legal_basis": "WHOIS, DNS, and SSL records are publicly mandated disclosures.",
-        "ndpa_section": "Section 31 (Public Data Exemption) — ICANN/NCC mandated public records.",
-        "public": True,
-    },
-    "image_analysis": {
-        "legal_basis": "EXIF metadata embedded in publicly accessible images.",
-        "ndpa_section": "Section 31 (Public Data Exemption) — metadata published by image owner.",
+    "url_intelligence": {
+        "legal_basis": "Analysis of publicly accessible URLs and domain registration records.",
+        "ndpa_section": "Section 31 (Public Data Exemption) — WHOIS and SSL are public.",
         "public": True,
     },
 }
