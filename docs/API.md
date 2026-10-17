@@ -1,18 +1,25 @@
 # VEILUX-NG API Reference
-> Complete developer reference for the Veilux-NG OSINT engine modules and dataclasses.
+> Developer reference for the four intelligence modules.
+
+---
 
 ## VeiluxEngine
 
 ### `investigate(identifier, feature=None) → InvestigationReport`
-Auto-detects identifier type and runs applicable modules.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| identifier | str | Phone, IP, URL, domain, username, or image URL |
-| feature | str \| None | Force a specific feature (see feature keys below) |
+| `identifier` | `str` | Phone number, IP address, URL, or username |
+| `feature` | `str \| None` | Force a specific module (see keys below) |
 
-**Feature keys:** `url_shortener`, `phishing_detector`, `social_discovery`,
-`phone_analysis`, `domain_analysis`, `image_analysis`, `ip_intelligence`
+**Feature keys:** `phone_analysis`, `ip_intelligence`, `social_discovery`, `url_intelligence`
+
+**Auto-detection priority:**
+1. Nigerian phone number → `phone_analysis`
+2. IPv4 / IPv6 address → `ip_intelligence`
+3. `http://` or `https://` URL → `url_intelligence`
+4. Domain name → `url_intelligence`
+5. Anything else → `social_discovery`
 
 **Returns:** `InvestigationReport`
 ```python
@@ -20,103 +27,117 @@ Auto-detects identifier type and runs applicable modules.
 class InvestigationReport:
     identifier: str
     detected_type: str
-    results: dict[str, Any]     # keyed by feature name
-    compliance: dict[str, Any]  # legal basis per feature
-    errors: dict[str, str]      # any feature-level errors
+    timestamp: str              # ISO 8601 UTC
+    results: dict[str, Any]    # keyed by module name
+    compliance: dict[str, Any] # legal basis per module
+    errors: dict[str, str]     # module-level errors
+```
+
+### `compliance_report() → list[ComplianceResult]`
+Returns NDPA 2023 compliance status for all four modules.
+
+---
+
+## ModuleResult (shared base)
+
+All four result dataclasses inherit from `ModuleResult`:
+
+```python
+@dataclass
+class ModuleResult:
+    module: str          # module name
+    input_value: str     # original input
+    timestamp: str       # ISO 8601 UTC
+    warnings: list[str]
+    data_sources: list[str]
 ```
 
 ---
 
-### `shorten_url(long_url, campaign=None) → ShortenResult`
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| long_url | str | Full URL to shorten |
-| campaign | str \| None | Optional campaign label |
+## Phone Intelligence
 
-**Returns:** `ShortenResult(short_code, long_url, short_url, campaign, created_at)`
+### `PhoneAnalysis.analyze(phone_number) → PhoneReport`
 
----
+**PhoneReport fields:**
 
-### `compliance_report() → list[ComplianceResult]`
-Returns NDPA 2023 compliance status for all 7 features.
-
----
-
-## URLShortener
-
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `shorten(long_url, campaign)` | str, str\|None | ShortenResult |
-| `record_click(short_code, ip, user_agent, city, country)` | str... | None |
-| `get_analytics(short_code)` | str | ClickAnalytics \| None |
-| `resolve(short_code)` | str | str \| None |
+| Field | Type | Description |
+|-------|------|-------------|
+| `normalized` | `str` | E.164 format (+2348031234567) |
+| `is_valid` | `bool` | Whether the number is valid |
+| `network_type` | `str` | Mobile or Landline |
+| `carrier_name` | `str \| None` | MTN, Glo, Airtel, 9mobile, etc. |
+| `country` | `str \| None` | Country name |
+| `region` | `str \| None` | Nigerian state of initial registration |
+| `region_note` | `str` | Accuracy caveat (portability disclaimer) |
+| `prefix` | `str \| None` | 4-digit NCC prefix |
+| `timezones` | `list \| None` | IANA timezone(s) |
+| `scam_reports` | `int \| None` | Reports from shouldianswer.net |
 
 ---
 
-## PhishingDetector
+## IP Intelligence
 
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `analyze(url)` | str | PhishingReport |
+### `IPIntelligence.analyze(ip) → IPReport`
 
-**PhishingReport fields:** `url`, `domain`, `risk_score` (0–100), `risk_level`
-(LOW/MEDIUM/HIGH/CRITICAL), `flags`, `domain_age_days`, `ssl_valid`,
-`ssl_issuer`, `impersonated_brand`, `threat_intel_hit`, `verdict`
+**IPReport fields:**
 
----
+| Field | Type | Description |
+|-------|------|-------------|
+| `ip` | `str` | Input IP address |
+| `is_valid` | `bool` | Whether the IP is valid |
+| `is_private` | `bool` | Private/loopback/reserved range |
+| `country` | `str \| None` | Country name |
+| `region` | `str \| None` | Region/state |
+| `city` | `str \| None` | City |
+| `isp` | `str \| None` | Internet Service Provider |
+| `asn` | `str \| None` | Autonomous System Number |
+| `is_vpn` | `bool` | VPN detected |
+| `is_proxy` | `bool` | Proxy detected |
+| `is_tor` | `bool` | Tor exit node |
+| `is_hosting` | `bool` | Datacenter/cloud infrastructure |
+| `risk_score` | `int` | 0–100 composite risk score |
+| `risk_flags` | `list[str]` | Risk indicators |
+| `maps_url` | `str \| None` | Google Maps link |
 
-## SocialDiscovery
-
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `discover(username)` | str | SocialDiscoveryReport |
-
-**SocialDiscoveryReport fields:** `username`, `found` (list), `not_found` (list),
-`errors` (list), `total_found` (int)
-
----
-
-## PhoneAnalysis
-
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `analyze(phone_number)` | str | PhoneReport |
-
-**PhoneReport fields:** `raw_input`, `normalized`, `is_valid`, `carrier_name`,
-`country`, `region`, `prefix`, `timezones`, `scam_reports`, `scam_score`
+**Provider priority:** IPinfo → Ipregistry → MaxMind → Spur → ip-api.com → ipwho.is
 
 ---
 
-## DomainAnalysis
+## Social Discovery
 
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `analyze(domain)` | str | DomainReport |
+### `SocialDiscovery.discover(username) → SocialDiscoveryReport`
 
-**DomainReport fields:** `domain`, `registrar`, `registered_on`, `expires_on`,
-`age_days`, `name_servers`, `dns_records`, `ssl` (SSLInfo), `hosting_ip`,
-`hosting_org`
+**SocialDiscoveryReport fields:**
 
----
+| Field | Type | Description |
+|-------|------|-------------|
+| `username` | `str` | Input username |
+| `found` | `list[ProfileResult]` | Confirmed public profiles |
+| `not_found` | `list[ProfileResult]` | Platforms where profile was absent |
+| `errors` | `list[ProfileResult]` | Platforms that timed out or blocked |
+| `total_found` | `int` | Count of confirmed profiles |
 
-## ImageAnalysis
-
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `analyze(image_url)` | str | ImageReport |
-
-**ImageReport fields:** `format`, `width`, `height`, `file_size_kb`,
-`camera_make`, `camera_model`, `date_taken`, `gps` (GPSCoordinates\|None),
-`exif_raw`, `reverse_search_links`, `tampering_indicators`
+**Platforms checked (15):** GitHub, Twitter/X, Instagram, TikTok, Reddit, YouTube, LinkedIn, Pinterest, Snapchat, Nairaland, Twitch, Medium, Dev.to, Keybase, HackerNews
 
 ---
 
-## IPIntelligence
+## URL Intelligence
 
-| Method | Parameters | Returns |
-|--------|-----------|---------|
-| `analyze(ip)` | str | IPReport |
+### `URLIntelligence.analyze(url) → URLIntelligenceReport`
 
-**IPReport fields:** `ip`, `is_valid`, `is_private`, `country`, `region`,
-`city`, `latitude`, `longitude`, `timezone`, `isp`, `org`, `asn`,
-`is_proxy`, `is_hosting`, `risk_score`, `risk_flags`, `maps_url`
+**URLIntelligenceReport fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `url` | `str` | Input URL |
+| `domain` | `str` | Extracted domain |
+| `risk_score` | `int` | 0–100 heuristic score |
+| `risk_level` | `str` | LOW / MEDIUM / HIGH / CRITICAL |
+| `flags` | `list[str]` | Specific indicators triggered |
+| `domain_age_days` | `int \| None` | Days since domain registration |
+| `ssl_valid` | `bool \| None` | SSL certificate validity |
+| `impersonated_brand` | `str \| None` | Brand being typosquatted |
+| `threat_intel_hit` | `bool` | Found in OpenPhish feed |
+| `verdict` | `str` | Human-readable summary |
+
+**Note:** Risk scores are heuristic indicators. Only `threat_intel_hit=True` constitutes a confirmed threat feed match. All other findings require human review.
