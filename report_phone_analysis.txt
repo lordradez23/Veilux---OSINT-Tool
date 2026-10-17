@@ -1,0 +1,19 @@
+
+-------------------------------------------------------
+  Investigation: 08160225671
+  Detected type : phone_analysis
+  Timestamp     : 2026-10-17T10:55:23.633030+00:00
+
+-------------------------------------------------------
+  Phone Analysis
+  Normalized  : +2348160225671
+  Valid       : True
+  Network     : Mobile
+  Carrier     : MTN
+  Country     : Nigeria
+  Region      : Ebonyi
+  Note        : Based on NCC initial registration block (number portability may apply).
+  Scam reports: 0
+
+───────────────────────────────────────────────────────
+

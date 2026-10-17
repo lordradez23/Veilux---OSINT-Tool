@@ -1,0 +1,34 @@
+{
+  "identifier": "0815088738",
+  "detected_type": "phone_analysis",
+  "timestamp": "2026-10-17T10:54:48.889578+00:00",
+  "results": {
+    "phone_analysis": {
+      "module": "phone_analysis",
+      "input_value": "0815088738",
+      "timestamp": "2026-10-17T10:54:48.890575+00:00",
+      "warnings": [],
+      "data_sources": [],
+      "raw_input": "0815088738",
+      "normalized": "0815088738",
+      "is_valid": false,
+      "carrier_name": null,
+      "network_type": "Mobile",
+      "country": null,
+      "region": null,
+      "region_note": "",
+      "prefix": null,
+      "timezones": null,
+      "scam_reports": null,
+      "scam_score": null,
+      "notes": "Does not match Nigerian phone number format."
+    }
+  },
+  "compliance": {
+    "phone_analysis": {
+      "legal_basis": "Carrier/state derived from public NCC prefix allocation tables.",
+      "ndpa_section": "Section 31 (Public Data Exemption) — prefix data is publicly published by NCC."
+    }
+  },
+  "errors": {}
+}
