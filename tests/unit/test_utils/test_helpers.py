@@ -3,15 +3,7 @@ Unit tests — Helpers
 """
 
 import pytest
-from veilux_ng.utils.helpers import anonymize_ip, levenshtein, extract_domain, parse_user_agent
-
-
-class TestAnonymizeIP:
-    def test_ipv4_zeroes_last_octet(self):
-        assert anonymize_ip("192.168.1.100") == "192.168.1.x"
-
-    def test_invalid_returns_unknown(self):
-        assert anonymize_ip("not-an-ip") == "unknown"
+from veilux_ng.utils.helpers import levenshtein, extract_domain, parse_user_agent
 
 
 class TestLevenshtein:

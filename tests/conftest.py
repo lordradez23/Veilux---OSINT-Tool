@@ -18,10 +18,6 @@ def sample_username():
     return "torvalds"
 
 @pytest.fixture
-def sample_domain():
-    return "example.com"
-
-@pytest.fixture
 def sample_ip():
     return "8.8.8.8"
 
@@ -32,7 +28,3 @@ def sample_url():
 @pytest.fixture
 def phishing_url():
     return "http://paypa1.com/login"
-
-@pytest.fixture
-def sample_image_url():
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png"

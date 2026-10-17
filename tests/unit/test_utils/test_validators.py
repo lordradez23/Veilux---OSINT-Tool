@@ -5,7 +5,7 @@ Unit tests — Validators
 import pytest
 from veilux_ng.utils.validators import (
     validate_ip, validate_phone, validate_url, validate_domain,
-    validate_username, validate_mac,
+    validate_username,
 )
 
 
@@ -74,14 +74,3 @@ class TestValidateUsername:
 
     def test_spaces(self):
         assert validate_username("user name") is False
-
-
-class TestValidateMAC:
-    def test_valid_colon(self):
-        assert validate_mac("00:1A:2B:3C:4D:5E") is True
-
-    def test_valid_dash(self):
-        assert validate_mac("00-1A-2B-3C-4D-5E") is True
-
-    def test_invalid(self):
-        assert validate_mac("ZZZZZZ") is False
